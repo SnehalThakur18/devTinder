@@ -9,6 +9,7 @@ app.use(express.json());
 app.post("/signup", async (req, res) => {
   const userObj = req.body;
   //creating a new instance of the user model
+  
   const user = new UserModel(userObj);
   //Saving the user to the database
   await user.save();
