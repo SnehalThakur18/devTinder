@@ -17,7 +17,7 @@ app.get("/user", async (req, res) => {
     }
   } catch (err) {
     console.error("Error while fetching user:", err);
-    res.status(500).send("Something went wrong. Please try again later.");
+    res.status(400).send("Something went wrong. Please try again later.");
   }
 });
 
@@ -27,14 +27,14 @@ app.get("/feed", async (req, res) => {
     res.send(users);
   } catch (err) {
     console.error("Error while fetching user:", err);
-    res.status(500).send("Something went wrong. Please try again later.");
+    res.status(400).send("Something went wrong. Please try again later.");
   }
 });
 
 app.get("/findUserByID", async (req, res) => {
   const userId = req.body._id;
   try {
-    const user = await UserModel.findById({ _id: userId });
+    const user = await UserModel.findById(userId);
     if (user) {
       res.send(user);
     } else {
@@ -42,7 +42,22 @@ app.get("/findUserByID", async (req, res) => {
     }
   } catch (err) {
     console.error("Error while fetching user:", err);
-    res.status(500).send("Something went wrong. Please try again later.");
+    res.status(400).send("Something went wrong. Please try again later.");
+  }
+});
+
+app.delete("/user", async (req, res) => {
+  const userId = req.body._id;
+  try {
+    const deletedUser = await UserModel.findByIdAndDelete(userId);
+    if (deletedUser) {
+      res.send("User deleted successfully.");
+    } else {
+      res.status(404).send("User not found.");
+    }
+  } catch (err) {
+    console.error("Error while deleting user:", err);
+    res.status(400).send("Something went wrong. Please try again later.");
   }
 });
 
