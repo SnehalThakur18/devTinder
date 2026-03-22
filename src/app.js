@@ -6,10 +6,49 @@ const app = express();
 
 app.use(express.json());
 
+app.get("/user", async (req, res) => {
+  const userEmail = req.body.email;
+  try {
+    const users = await UserModel.find({ email: userEmail });
+    if (users.length > 0) {
+      res.send(users);
+    } else {
+      res.status(404).send("User not found.");
+    }
+  } catch (err) {
+    console.error("Error while fetching user:", err);
+    res.status(500).send("Something went wrong. Please try again later.");
+  }
+});
+
+app.get("/feed", async (req, res) => {
+  try {
+    const users = await UserModel.find({});
+    res.send(users);
+  } catch (err) {
+    console.error("Error while fetching user:", err);
+    res.status(500).send("Something went wrong. Please try again later.");
+  }
+});
+
+app.get("/findUserByID", async (req, res) => {
+  const userId = req.body._id;
+  try {
+    const user = await UserModel.findById({ _id: userId });
+    if (user) {
+      res.send(user);
+    } else {
+      res.status(404).send("User not found.");
+    }
+  } catch (err) {
+    console.error("Error while fetching user:", err);
+    res.status(500).send("Something went wrong. Please try again later.");
+  }
+});
+
 app.post("/signup", async (req, res) => {
   const userObj = req.body;
   //creating a new instance of the user model
-  
   const user = new UserModel(userObj);
   //Saving the user to the database
   await user.save();
@@ -17,7 +56,7 @@ app.post("/signup", async (req, res) => {
   try {
     res.send("User created successfully");
   } catch (err) {
-    res.status(400).send("Error while creating user: ", err.message);
+    res.status(400).send("Error while creating user: " + err.message);
   }
 });
 
