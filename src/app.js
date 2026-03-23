@@ -119,7 +119,7 @@ app.patch("/userWithEmail", async (req, res) => {
 app.post("/signup", async (req, res) => {
   try {
     const userObj = req.body;
-    const user = new UserModel(userObj);
+    const user = new UserModel(userObj); 
     await user.save();
     res.send("User created successfully");
   } catch (err) {
