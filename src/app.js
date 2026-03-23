@@ -17,7 +17,9 @@ app.get("/user", async (req, res) => {
     }
   } catch (err) {
     console.error("Error while fetching user:", err);
-    res.status(400).send("Something went wrong. Please try again later.");
+    res
+      .status(400)
+      .send("Something went wrong. Please try again later." + err.message);
   }
 });
 
@@ -27,7 +29,9 @@ app.get("/feed", async (req, res) => {
     res.send(users);
   } catch (err) {
     console.error("Error while fetching user:", err);
-    res.status(400).send("Something went wrong. Please try again later.");
+    res
+      .status(400)
+      .send("Something went wrong. Please try again later." + err.message);
   }
 });
 
@@ -42,7 +46,9 @@ app.get("/findUserByID", async (req, res) => {
     }
   } catch (err) {
     console.error("Error while fetching user:", err);
-    res.status(400).send("Something went wrong. Please try again later.");
+    res
+      .status(400)
+      .send("Something went wrong. Please try again later." + err.message);
   }
 });
 
@@ -57,21 +63,77 @@ app.delete("/user", async (req, res) => {
     }
   } catch (err) {
     console.error("Error while deleting user:", err);
-    res.status(400).send("Something went wrong. Please try again later.");
+    res
+      .status(400)
+      .send("Something went wrong. Please try again later." + err.message);
+  }
+});
+
+app.patch("/user", async (req, res) => {
+  const userId = req.body.userId;
+  const data = req.body;
+  try {
+    const updateUser = await UserModel.findByIdAndUpdate(userId, data, {
+      returnDocument: "before",
+      runValidators: true,
+    });
+    console.log(updateUser);
+    if (updateUser) {
+      res.send("User updated successfully.");
+    } else {
+      res.status(404).send("User not found.");
+    }
+  } catch (err) {
+    console.error("Error while updating user:", err);
+    res
+      .status(400)
+      .send("Something went wrong. Please try again later." + err.message);
+  }
+});
+
+app.patch("/userWithEmail", async (req, res) => {
+  const userEmail = req.body.email;
+  const data = req.body;
+  try {
+    const updateUser = await UserModel.findOneAndUpdate(
+      { email: userEmail },
+      data,
+      {
+        returnDocument: "after",
+      },
+    );
+    console.log(updateUser);
+    if (updateUser) {
+      res.send("User updated successfully.");
+    } else {
+      res.status(404).send("User not found.");
+    }
+  } catch (err) {
+    console.error("Error while updating user:", err);
+    res
+      .status(400)
+      .send("Something went wrong. Please try again later." + err.message);
   }
 });
 
 app.post("/signup", async (req, res) => {
-  const userObj = req.body;
-  //creating a new instance of the user model
-  const user = new UserModel(userObj);
-  //Saving the user to the database
-  await user.save();
-
   try {
+    const userObj = req.body;
+    const user = new UserModel(userObj);
+    await user.save();
     res.send("User created successfully");
   } catch (err) {
-    res.status(400).send("Error while creating user: " + err.message);
+    if (err.name === "ValidationError") {
+      return res.status(400).json({
+        error: "ValidationError",
+        message: err.message,
+      });
+    }
+
+    res.status(500).json({
+      error: "InternalServerError",
+      message: "Error while creating user.",
+    });
   }
 });
 
