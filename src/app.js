@@ -121,12 +121,12 @@ app.post("/signup", async (req, res) => {
     const userObj = req.body;
     const user = new UserModel(userObj);
     await user.save();
-    res.send("User created successfully");
+    res.status(201).send("User created successfully");
   } catch (err) {
     if (err.name === "ValidationError") {
+      const messages = Object.values(err.errors || {}).map((e) => e.message);
       return res.status(400).json({
-        error: "ValidationError",
-        message: err.message,
+        message: messages.join(" "),
       });
     }
 
