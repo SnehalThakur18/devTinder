@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
+const validator = require("validator");
 
 const userSchema = new Schema(
   {
@@ -21,18 +22,21 @@ const userSchema = new Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      validate: {
-        validator: (value) => {
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          return emailRegex.test(value);
-        },
-        message: "Please enter a valid email address.",
+      validate(value) {
+        if (!validator.isEmail(value)) {
+          throw new Error("Invalid email address: " + value);
+        }
       },
     },
     password: {
       type: String,
       required: true,
       maxLength: 15,
+      validate(value) {
+        if (!validator.isStrongPassword(value)) {
+          throw new Error("Password is not strong enough. " + value);
+        }
+      },
     },
     age: {
       type: Number,
@@ -50,6 +54,11 @@ const userSchema = new Schema(
     },
     photoUrl: {
       type: String,
+      validate(value) {
+        if (value && !validator.isURL(value)) {
+          throw new Error("Invalid URL for photo: " + value);
+        }
+      },
     },
     about: {
       type: String,
