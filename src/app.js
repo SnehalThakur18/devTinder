@@ -136,6 +136,7 @@ app.post("/signup", async (req, res) => {
   try {
     const userObj = req.body;
     const nameRegex = /^[A-Za-z\s]+$/;
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
 
     if (userObj.firstName && !nameRegex.test(userObj.firstName)) {
       return res.status(400).json({ message: "Invalid first name." });
@@ -143,6 +144,12 @@ app.post("/signup", async (req, res) => {
 
     if (userObj.lastName && !nameRegex.test(userObj.lastName)) {
       return res.status(400).json({ message: "Invalid last name." });
+    }
+
+    if (userObj.password && !passwordRegex.test(userObj.password)) {
+      return res.status(400).json({
+        message: "Password must include letters, numbers, and a special character.",
+      });
     }
 
     const user = new UserModel(userObj);
