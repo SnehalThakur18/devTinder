@@ -7,6 +7,7 @@ const userSchema = new Schema(
     firstName: {
       type: String,
       required: true,
+      minLength: 4,
       maxLength: 50,
       trim: true,
     },
@@ -31,7 +32,6 @@ const userSchema = new Schema(
     password: {
       type: String,
       required: true,
-      maxLength: 15,
       validate(value) {
         if (!validator.isStrongPassword(value)) {
           throw new Error("Password is not strong enough. " + value);

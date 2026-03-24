@@ -1,10 +1,36 @@
 const express = require("express");
 const connectDB = require("./config/database");
 const UserModel = require("./models/user");
+const bcrypt = require("bcrypt");
+const { validateSignupData } = require("./utils/validations");
 
 const app = express();
 
 app.use(express.json());
+
+app.post("/signup", async (req, res) => {
+  try {
+    const validationResult = validateSignupData(req);
+    if (!validationResult.isValid) {
+      return res.status(400).json({ message: validationResult.message });
+    }
+
+    const { firstName, lastName, email, password } = req.body;
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const user = new UserModel({
+      firstName,
+      lastName,
+      email,
+      password: passwordHash,
+    });
+    await user.save();
+    res.status(201).send("User created successfully");
+  } catch (err) {
+    res.status(400).send("ERROR: " + err.message);
+  }
+});
 
 app.get("/user", async (req, res) => {
   const userEmail = req.body.email;
@@ -129,41 +155,6 @@ app.patch("/userWithEmail", async (req, res) => {
     res
       .status(400)
       .send("Something went wrong. Please try again later." + err.message);
-  }
-});
-
-app.post("/signup", async (req, res) => {
-  try {
-    const userObj = req.body;
-    const nameRegex = /^[A-Za-z\s]+$/;
-
-    if (userObj.firstName && !nameRegex.test(userObj.firstName)) {
-      return res.status(400).json({ message: "Invalid first name." });
-    }
-
-    if (userObj.lastName && !nameRegex.test(userObj.lastName)) {
-      return res.status(400).json({ message: "Invalid last name." });
-    }
-
-    const user = new UserModel(userObj);
-    await user.save();
-    res.status(201).send("User created successfully");
-  } catch (err) {
-    if (err.name === "ValidationError") {
-      const messages = Object.values(err.errors || {}).map((e) => e.message);
-      return res.status(400).json({
-        message: messages.join(" "),
-      });
-    }
-
-    if (err.code === 11000 && err.keyPattern?.email) {
-      return res.status(400).json({ message: "Email already exists." });
-    }
-
-    res.status(500).json({
-      error: "InternalServerError",
-      message: "Error while creating user.",
-    });
   }
 });
 
