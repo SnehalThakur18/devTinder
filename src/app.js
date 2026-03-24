@@ -69,10 +69,26 @@ app.delete("/user", async (req, res) => {
   }
 });
 
-app.patch("/user", async (req, res) => {
-  const userId = req.body.userId;
+app.patch("/user/:userId", async (req, res) => {
+  const userId = req.params.userId;
   const data = req.body;
   try {
+    const ALLOWED_UPDATES = ["gender", "about", "skills", "photoUrl"];
+    const isUpdateAllowed = Object.keys(data).every((key) =>
+      ALLOWED_UPDATES.includes(key),
+    );
+    if (!isUpdateAllowed) {
+      return res.status(400).json({
+        message:
+          "Only these fields can be updated: " + ALLOWED_UPDATES.join(", "),
+      });
+    }
+
+    if (data.skills && data.skills.length > 10) {
+      return res.status(400).json({
+        message: "You can add up to 10 skills only.",
+      });
+    }
     const updateUser = await UserModel.findByIdAndUpdate(userId, data, {
       returnDocument: "before",
       runValidators: true,
@@ -119,6 +135,16 @@ app.patch("/userWithEmail", async (req, res) => {
 app.post("/signup", async (req, res) => {
   try {
     const userObj = req.body;
+    const nameRegex = /^[A-Za-z\s]+$/;
+
+    if (userObj.firstName && !nameRegex.test(userObj.firstName)) {
+      return res.status(400).json({ message: "Invalid first name." });
+    }
+
+    if (userObj.lastName && !nameRegex.test(userObj.lastName)) {
+      return res.status(400).json({ message: "Invalid last name." });
+    }
+
     const user = new UserModel(userObj);
     await user.save();
     res.status(201).send("User created successfully");
@@ -128,6 +154,10 @@ app.post("/signup", async (req, res) => {
       return res.status(400).json({
         message: messages.join(" "),
       });
+    }
+
+    if (err.code === 11000 && err.keyPattern?.email) {
+      return res.status(400).json({ message: "Email already exists." });
     }
 
     res.status(500).json({
