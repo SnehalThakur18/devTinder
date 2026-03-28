@@ -1,6 +1,7 @@
 const express = require("express");
 const connectDB = require("./config/database");
 const UserModel = require("./models/user");
+const { userAuth } = require("./middleware/auth");
 const bcrypt = require("bcrypt");
 const { validateSignupData } = require("./utils/validations");
 const cookieParser = require("cookie-parser");
@@ -49,12 +50,17 @@ app.post("/login", async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (isPasswordValid) {
-      const token = jwt.sign({ _id: user._id }, "testdata@123");
-      // send a dummy cookie to the user
+      // JWT with 7-day expiry (token expiresOn ~ cookie expiry)
+      const token = jwt.sign({ _id: user._id }, "testdata@123", {
+        expiresIn: "7d",
+      });
+
       res.cookie("token", token, {
         httpOnly: true,
+        // expires in 7 days from now
+        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       });
-      res.send("Login successful. Dummy cookie set.");
+      res.send("Login successful.");
     } else {
       return res.status(400).send("Invalid login credentials.");
     }
@@ -63,129 +69,12 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/profile", async (req, res) => {
+app.get("/profile", userAuth, async (req, res) => {
   try {
-    const tokenFromCookie = req.cookies && req.cookies.token;
-
-    if (!tokenFromCookie) {
-      return res
-        .status(400)
-        .send("Invalid request. Please login to access profile.");
-    } else {
-      const decodedMessage = jwt.verify(tokenFromCookie, "testdata@123");
-      if (decodedMessage) {
-        const userId = decodedMessage._id;
-        const user = await UserModel.findById(userId);
-        if (user) {
-          res.send(user);
-        } else {
-          res.status(404).send("User not found.");
-        }
-      }
-    }
+    const user = req.user;
+    res.send(user);
   } catch (err) {
     res.status(400).send("ERROR: " + err.message);
-  }
-});
-
-app.get("/user", async (req, res) => {
-  const userEmail = req.body.email;
-  try {
-    const users = await UserModel.find({ email: userEmail });
-    if (users.length > 0) {
-      res.send(users);
-    } else {
-      res.status(404).send("User not found.");
-    }
-  } catch (err) {
-    console.error("Error while fetching user:", err);
-    res
-      .status(400)
-      .send("Something went wrong. Please try again later." + err.message);
-  }
-});
-
-app.get("/feed", async (req, res) => {
-  try {
-    const users = await UserModel.find({});
-    res.send(users);
-  } catch (err) {
-    console.error("Error while fetching user:", err);
-    res
-      .status(400)
-      .send("Something went wrong. Please try again later." + err.message);
-  }
-});
-
-app.get("/findUserByID", async (req, res) => {
-  const userId = req.body._id;
-  try {
-    const user = await UserModel.findById(userId);
-    if (user) {
-      res.send(user);
-    } else {
-      res.status(404).send("User not found.");
-    }
-  } catch (err) {
-    console.error("Error while fetching user:", err);
-    res
-      .status(400)
-      .send("Something went wrong. Please try again later." + err.message);
-  }
-});
-
-app.delete("/user", async (req, res) => {
-  const userId = req.body._id;
-  try {
-    const deletedUser = await UserModel.findByIdAndDelete(userId);
-    if (deletedUser) {
-      res.send("User deleted successfully.");
-    } else {
-      res.status(404).send("User not found.");
-    }
-  } catch (err) {
-    console.error("Error while deleting user:", err);
-    res
-      .status(400)
-      .send("Something went wrong. Please try again later." + err.message);
-  }
-});
-
-app.patch("/user/:userId", async (req, res) => {
-  const userId = req.params.userId;
-  const data = req.body;
-  try {
-    const ALLOWED_UPDATES = ["gender", "about", "skills", "photoUrl"];
-    const isUpdateAllowed = Object.keys(data).every((key) =>
-      ALLOWED_UPDATES.includes(key),
-    );
-    if (!isUpdateAllowed) {
-      return res.status(400).json({
-        message:
-          "Only these fields can be updated: " + ALLOWED_UPDATES.join(", "),
-      });
-    }
-
-    if (data.skills && data.skills.length > 10) {
-      return res.status(400).json({
-        message: "You can add up to 10 skills only.",
-      });
-    }
-    const updateUser = await UserModel.findByIdAndUpdate(userId, data, {
-      returnDocument: "before",
-      runValidators: true,
-    });
-
-    if (updateUser) {
-      res.send("User updated successfully.");
-    } else {
-      res.status(404).send("User not found.");
-    }
-  } catch (err) {
-    console.error("Error while updating user:", err);
-    res
-      .status(400)
-      .send("Something went wrong. Please try again later." + err.message);
   }
 });
 
