@@ -49,9 +49,39 @@ app.post("/login", async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (isPasswordValid) {
-      res.send("Login successful.");
+      const token = jwt.sign({ _id: user._id }, "testdata@123");
+      // send a dummy cookie to the user
+      res.cookie("token", token, {
+        httpOnly: true,
+      });
+      res.send("Login successful. Dummy cookie set.");
     } else {
       return res.status(400).send("Invalid login credentials.");
+    }
+  } catch (err) {
+    res.status(400).send("ERROR: " + err.message);
+  }
+});
+
+app.get("/profile", async (req, res) => {
+  try {
+    const tokenFromCookie = req.cookies && req.cookies.token;
+
+    if (!tokenFromCookie) {
+      return res
+        .status(400)
+        .send("Invalid request. Please login to access profile.");
+    } else {
+      const decodedMessage = jwt.verify(tokenFromCookie, "testdata@123");
+      if (decodedMessage) {
+        const userId = decodedMessage._id;
+        const user = await UserModel.findById(userId);
+        if (user) {
+          res.send(user);
+        } else {
+          res.status(404).send("User not found.");
+        }
+      }
     }
   } catch (err) {
     res.status(400).send("ERROR: " + err.message);
@@ -145,7 +175,7 @@ app.patch("/user/:userId", async (req, res) => {
       returnDocument: "before",
       runValidators: true,
     });
-    console.log(updateUser);
+
     if (updateUser) {
       res.send("User updated successfully.");
     } else {
