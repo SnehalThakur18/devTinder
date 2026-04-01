@@ -10,8 +10,7 @@ requestRouter.post(
   async (req, res) => {
     try {
       const fromUserId = req.user._id;
-      const toUserId = req.params.toUserId;
-      const status = req.params.status;
+      const { toUserId, status } = req.params;
 
       const allowedStatus = ["ignored", "interested"];
       if (!allowedStatus.includes(status)) {
@@ -23,7 +22,7 @@ requestRouter.post(
       //check if userid is valid
       const toUser = await User.findById(toUserId);
       if (!toUser) {
-        return res.status(404).json({ message: "User not found!" });
+        return res.status(400).json({ message: "User not found!" });
       }
 
       const existingConnectionRequest = await ConnectionRequest.findOne({
@@ -50,6 +49,8 @@ requestRouter.post(
         message:
           req.user.firstName + " is " + status + " in " + toUser.firstName,
         data,
+        status: "success",
+        statusCode: 200,
       });
     } catch (err) {
       res.status(400).json({
@@ -66,11 +67,39 @@ requestRouter.post(
   userAuth,
   async (req, res) => {
     try {
-      // is logged in user the toUserId of the request?
-    // accepting or rejecting the connection request that can only be happen if the status is interested
-    // If the connection request in ignored status then nobody can change the status
-    //loggedInId == toUserId
-    //status = Interested
+      const loggedInUser = req.user;
+      const { status, requestId } = req.params;
+      const allowedStatus = ["accepted", "rejected"];
+      if (!allowedStatus.includes(status)) {
+        return res.status(400).json({
+          message: "Invalid status type: " + status,
+          status: "error",
+          statusCode: 400,
+        });
+      }
+
+      const connectionRequest = await ConnectionRequest.findOne({
+        _id: requestId, // request Id is the connection request document id which is newly create when a user sends connection request to other user.
+        toUserId: loggedInUser._id,
+        status: "interested",
+      });
+
+      if (!connectionRequest) {
+        return res.status(400).json({
+          message: "Connection request not found or cannot be reviewd.",
+          status: "error",
+          statusCode: 400,
+        });
+      }
+
+      connectionRequest.status = status;
+      const data = await connectionRequest.save();
+      res.json({
+        message: "Connection request " + status,
+        data,
+        status: "success",
+        statusCode: 200,
+      });
     } catch (err) {
       res.status(400).json({
         message: "ERROR: " + err.message,
