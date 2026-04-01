@@ -3,10 +3,13 @@ const connectDB = require("./config/database");
 const UserModel = require("./models/user");
 const bcrypt = require("bcrypt");
 const { validateSignupData } = require("./utils/validations");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.post("/signup", async (req, res) => {
   try {
@@ -142,31 +145,6 @@ app.patch("/user/:userId", async (req, res) => {
       returnDocument: "before",
       runValidators: true,
     });
-    console.log(updateUser);
-    if (updateUser) {
-      res.send("User updated successfully.");
-    } else {
-      res.status(404).send("User not found.");
-    }
-  } catch (err) {
-    console.error("Error while updating user:", err);
-    res
-      .status(400)
-      .send("Something went wrong. Please try again later." + err.message);
-  }
-});
-
-app.patch("/userWithEmail", async (req, res) => {
-  const userEmail = req.body.email;
-  const data = req.body;
-  try {
-    const updateUser = await UserModel.findOneAndUpdate(
-      { email: userEmail },
-      data,
-      {
-        returnDocument: "after",
-      },
-    );
     console.log(updateUser);
     if (updateUser) {
       res.send("User updated successfully.");
