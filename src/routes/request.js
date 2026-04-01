@@ -33,9 +33,11 @@ requestRouter.post(
         ],
       });
       if (existingConnectionRequest) {
-        return res
-          .status(400)
-          .send({ message: "Connection Request Already Exists!!" });
+        return res.status(400).json({
+          message: "Connection Request Already Exists!!",
+          status: "error",
+          statusCode: 400,
+        });
       }
 
       const connectionRequest = new ConnectionRequest({
@@ -50,7 +52,31 @@ requestRouter.post(
         data,
       });
     } catch (err) {
-      res.status(400).send("ERROR: " + err.message);
+      res.status(400).json({
+        message: "ERROR: " + err.message,
+        status: "error",
+        statusCode: 400,
+      });
+    }
+  },
+);
+
+requestRouter.post(
+  "/request/review/:status/:requestId",
+  userAuth,
+  async (req, res) => {
+    try {
+      // is logged in user the toUserId of the request?
+    // accepting or rejecting the connection request that can only be happen if the status is interested
+    // If the connection request in ignored status then nobody can change the status
+    //loggedInId == toUserId
+    //status = Interested
+    } catch (err) {
+      res.status(400).json({
+        message: "ERROR: " + err.message,
+        status: "error",
+        statusCode: 400,
+      });
     }
   },
 );

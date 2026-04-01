@@ -20,9 +20,17 @@ authRouter.post("/signup", async (req, res) => {
     });
     user.password = await user.encryptPassword(password);
     await user.save();
-    res.status(201).send("User created successfully");
+    res.status(201).json({
+      message: "User created successfully.",
+      status: "success",
+      statusCode: 201,
+    });
   } catch (err) {
-    res.status(400).send("ERROR: " + err.message);
+    res.status(400).json({
+      message: "ERROR: " + err.message,
+      status: "error",
+      statusCode: 400,
+    });
   }
 });
 
@@ -30,11 +38,19 @@ authRouter.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      return res.status(400).send("Email and password are required.");
+      return res.status(400).json({
+        message: "Email and password are required.",
+        status: "error",
+        statusCode: 400,
+      });
     }
     const user = await UserModel.findOne({ email: email });
     if (!user) {
-      return res.status(400).send("Invalid login credentials.");
+      return res.status(400).json({
+        message: "Invalid login credentials.",
+        status: "error",
+        statusCode: 400,
+      });
     }
 
     const isPasswordValid = await user.validatePassword(password);
@@ -48,12 +64,25 @@ authRouter.post("/login", async (req, res) => {
         // expires in 7 days from now
         expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       });
-      res.send("Login successful.");
+      res.json({
+        message: "Login successful.",
+        data: user,
+        status: "success",
+        statusCode: 200,
+      });
     } else {
-      return res.status(400).send("Invalid login credentials.");
+      return res.status(400).json({
+        message: "Invalid login credentials.",
+        status: "error",
+        statusCode: 400,
+      });
     }
   } catch (err) {
-    res.status(400).send("ERROR: " + err.message);
+    res.status(400).json({
+      message: "ERROR: " + err.message,
+      status: "error",
+      statusCode: 400,
+    });
   }
 });
 
