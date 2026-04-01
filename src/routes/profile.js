@@ -73,6 +73,14 @@ profileRouter.patch("/profile/password", userAuth, async (req, res) => {
       });
     }
 
+    if (currentPassword === newPassword) {
+      return res.status(400).json({
+        message: "New password must be different from the current password.",
+        status: "error",
+        statusCode: 400,
+      });
+    }
+
     if (!validator.isStrongPassword(newPassword)) {
       return res.status(400).json({
         message: "New password is not strong enough.",
