@@ -4,12 +4,19 @@ const { userAuth } = require("../middleware/auth");
 const { validateEditProfileData } = require("../utils/validations");
 const validator = require("validator");
 
+const USER_FIELDS = "firstName lastName about skills age gender";
+
 profileRouter.get("/profile/view", userAuth, async (req, res) => {
   try {
-    const user = req.user;
+    const user = req.user.toObject();
+    const allowedFields = USER_FIELDS.split(" ");
+    const filteredUser = {};
+    allowedFields.forEach((field) => {
+      if (user[field] !== undefined) filteredUser[field] = user[field];
+    });
     res.json({
       message: "Profile retrived successfully",
-      data: user,
+      data: filteredUser,
       status: "success",
       statusCode: 200,
     });

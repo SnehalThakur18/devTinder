@@ -2,6 +2,7 @@ const express = require("express");
 const userRouter = express.Router();
 const { userAuth } = require("../middleware/auth");
 const ConnectionRequest = require("../models/connectionRequest");
+const UserModel = require("../models/user");
 
 const USER_FIELDS = "firstName lastName about skills age gender";
 userRouter.get("/user/requests/received", userAuth, async (req, res) => {
@@ -47,6 +48,45 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
       message: "Connections retrieved successfully",
       data,
     });
+  } catch (err) {
+    res.status(400).json({
+      message: "ERROR: " + err.message,
+      status: "error",
+      statusCode: 400,
+    });
+  }
+});
+
+userRouter.get("/user/feed", userAuth, async (req, res) => {
+  try {
+    const loggedInUser = req.user;
+    const connectionRequests = await ConnectionRequest.find({
+      $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
+    });
+
+    const hideUserFromFeed = new Set();
+    connectionRequests.forEach((request) => {
+      hideUserFromFeed.add(request.fromUserId.toString());
+      hideUserFromFeed.add(request.toUserId.toString());
+    });
+    const users = await UserModel.find({
+      $and: [
+        { _id: { $nin: Array.from(hideUserFromFeed) } },
+        { _id: { $ne: loggedInUser._id } },
+      ],
+    }).select(USER_FIELDS);
+    res.json({
+      message: "User feed retrieved successfully",
+      data: users,
+      status: "success",
+      statusCode: 200,
+    });
+    // User should see all the user profiles except:
+    // 1. his own profile
+    // 2. profiles of users with whom he has already accepted connection
+    // 3. profiles of users to whom he has sent connection request in interested status
+    // 4. profiles of users from whom he has received connection request in interested status
+    // 5. profiles of users whom he has ignored/connection request rejected.
   } catch (err) {
     res.status(400).json({
       message: "ERROR: " + err.message,
