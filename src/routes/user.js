@@ -11,8 +11,8 @@ userRouter.get("/user/requests/received", userAuth, async (req, res) => {
     const connectionRequests = await ConnectionRequest.find({
       toUserId: loggedInUser._id,
       status: "interested",
-      // }).populate("fromUserId", "firstName lastName about skills age gender");
     }).populate("fromUserId", USER_FIELDS);
+
     res.json({
       message: "Received connection requests retrieved successfully",
       data: connectionRequests,
@@ -37,16 +37,19 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
         { toUserId: loggedInUser._id, status: "accepted" },
       ],
     }).populate("fromUserId toUserId", USER_FIELDS);
-    console.log("Connections: ", connections);
+
     const data = connections.map((connection) => {
       if (connection.fromUserId._id.equals(loggedInUser._id)) {
         return connection.toUserId;
       }
       return connection.fromUserId;
     });
+
     res.json({
       message: "Connections retrieved successfully",
       data,
+      status: "success",
+      statusCode: 200,
     });
   } catch (err) {
     res.status(400).json({
@@ -69,24 +72,20 @@ userRouter.get("/user/feed", userAuth, async (req, res) => {
       hideUserFromFeed.add(request.fromUserId.toString());
       hideUserFromFeed.add(request.toUserId.toString());
     });
+
     const users = await UserModel.find({
       $and: [
         { _id: { $nin: Array.from(hideUserFromFeed) } },
         { _id: { $ne: loggedInUser._id } },
       ],
     }).select(USER_FIELDS);
+
     res.json({
       message: "User feed retrieved successfully",
       data: users,
       status: "success",
       statusCode: 200,
     });
-    // User should see all the user profiles except:
-    // 1. his own profile
-    // 2. profiles of users with whom he has already accepted connection
-    // 3. profiles of users to whom he has sent connection request in interested status
-    // 4. profiles of users from whom he has received connection request in interested status
-    // 5. profiles of users whom he has ignored/connection request rejected.
   } catch (err) {
     res.status(400).json({
       message: "ERROR: " + err.message,
