@@ -56,6 +56,7 @@ const userSchema = new Schema(
     },
     photoUrl: {
       type: String,
+      default: "https://geographyandyou.com/images/user-profile.png",
       validate(value) {
         if (value && !validator.isURL(value)) {
           throw new Error("Invalid URL for photo: " + value);
