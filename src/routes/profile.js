@@ -4,7 +4,7 @@ const { userAuth } = require("../middleware/auth");
 const { validateEditProfileData } = require("../utils/validations");
 const validator = require("validator");
 
-const USER_FIELDS = "firstName lastName about skills age gender";
+const USER_FIELDS = "firstName lastName about skills age gender photoUrl";
 
 profileRouter.get("/profile/view", userAuth, async (req, res) => {
   try {
@@ -15,7 +15,7 @@ profileRouter.get("/profile/view", userAuth, async (req, res) => {
       if (user[field] !== undefined) filteredUser[field] = user[field];
     });
     res.json({
-      message: "Profile retrived successfully",
+      message: "Profile retrieved successfully",
       data: filteredUser,
       status: "success",
       statusCode: 200,

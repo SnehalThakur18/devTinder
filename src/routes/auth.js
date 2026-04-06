@@ -64,10 +64,10 @@ authRouter.post("/login", async (req, res) => {
         // expires in 7 days from now
         expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       });
-      const { firstName, lastName, gender, age, skills, about } = user;
+      const { firstName, lastName, gender, age, skills, about, photoUrl } = user;
       res.json({
         message: "Login successful.",
-        data: { firstName, lastName, gender, age, skills, about },
+        data: { firstName, lastName, gender, age, skills, about, photoUrl },
         status: "success",
         statusCode: 200,
       });
