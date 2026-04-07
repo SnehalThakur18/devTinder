@@ -39,7 +39,8 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
     }).populate("fromUserId toUserId", USER_FIELDS);
 
     const data = connections.map((connection) => {
-      if (connection.fromUserId._id.equals(loggedInUser._id)) {
+      // Ensure both IDs are strings for comparison
+      if (connection.fromUserId._id.toString() === loggedInUser._id.toString()) {
         return connection.toUserId;
       }
       return connection.fromUserId;
@@ -76,10 +77,11 @@ userRouter.get("/user/feed", userAuth, async (req, res) => {
       hideUserFromFeed.add(request.toUserId.toString());
     });
 
+    // Ensure all IDs in $nin and $ne are strings
     const users = await UserModel.find({
       $and: [
-        { _id: { $nin: Array.from(hideUserFromFeed) } },
-        { _id: { $ne: loggedInUser._id } },
+        { _id: { $nin: Array.from(hideUserFromFeed).map(String) } },
+        { _id: { $ne: loggedInUser._id.toString() } },
       ],
     })
       .select(USER_FIELDS)
