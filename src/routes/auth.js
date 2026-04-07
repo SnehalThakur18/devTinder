@@ -19,11 +19,16 @@ authRouter.post("/signup", async (req, res) => {
       password,
     });
     user.password = await user.encryptPassword(password);
-    await user.save();
-    res.status(201).json({
+    const savedUser = await user.save();
+    const token = await savedUser.getJWT();
+
+    res.cookie("token", token, {
+      expires: new Date(Date.now() + 8 * 3600000),
+    });
+
+    res.json({
       message: "User created successfully.",
-      status: "success",
-      statusCode: 201,
+      data: savedUser,
     });
   } catch (err) {
     res.status(400).json({
@@ -64,7 +69,8 @@ authRouter.post("/login", async (req, res) => {
         // expires in 7 days from now
         expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       });
-      const { firstName, lastName, gender, age, skills, about, photoUrl } = user;
+      const { firstName, lastName, gender, age, skills, about, photoUrl } =
+        user;
       res.json({
         message: "Login successful.",
         data: { firstName, lastName, gender, age, skills, about, photoUrl },
