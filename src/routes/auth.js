@@ -6,9 +6,14 @@ const { validateSignupData } = require("../utils/validations");
 authRouter.post("/signup", async (req, res) => {
   try {
     const validationResult = validateSignupData(req);
-    if (!validationResult.isValid) {
-      return res.status(400).json({ message: validationResult.message });
-    }
+      if (!validationResult.isValid) {
+        return res.status(400).json({
+          message: validationResult.message,
+          data: null,
+          status: "error",
+          statusCode: 400,
+        });
+      }
 
     const { firstName, lastName, email, password } = req.body;
 
@@ -26,10 +31,12 @@ authRouter.post("/signup", async (req, res) => {
       expires: new Date(Date.now() + 8 * 3600000),
     });
 
-    res.json({
-      message: "User created successfully.",
-      data: savedUser,
-    });
+      res.json({
+        message: "User created successfully.",
+        data: savedUser,
+        status: "success",
+        statusCode: 200,
+      });
   } catch (err) {
     res.status(400).json({
       message: "ERROR: " + err.message,
