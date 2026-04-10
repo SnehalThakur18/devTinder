@@ -11,7 +11,8 @@ const userAuth = async (req, res, next) => {
         statusCode: 401,
       });
     }
-    const decodedObj = jwt.verify(token, "testdata@123");
+    const secret = process.env.JWT_SECRET;
+    const decodedObj = jwt.verify(token, secret);
     const userId = decodedObj._id;
     const user = await UserModel.findById(userId);
     if (!user) {
