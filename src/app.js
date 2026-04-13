@@ -7,6 +7,7 @@ const requestRouter = require("./routes/request");
 const userRouter = require("./routes/user");
 const cors = require("cors");
 require("dotenv").config();
+require("./utils/cronjob");
 
 const app = express();
 
@@ -29,7 +30,7 @@ app.use("/", userRouter);
 connectDB()
   .then(() => {
     console.log("Database connected successfully");
-    app.listen(7777, () => {
+    app.listen(process.env.PORT, () => {
       console.log("server is running on port 7777");
     });
   })

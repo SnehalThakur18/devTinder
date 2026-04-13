@@ -63,26 +63,37 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
 
 userRouter.get("/user/feed", userAuth, async (req, res) => {
   try {
+
     const loggedInUser = req.user;
     const page = Math.max(Number.parseInt(req.query.page) || 1, 1);
     const limit = Math.min(Number.parseInt(req.query.limit) || 10, 50);
     const skip = (page - 1) * limit;
+
+    // Find all connection requests involving the logged-in user
     const connectionRequests = await ConnectionRequest.find({
-      $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
+      $or: [
+        { fromUserId: loggedInUser._id },
+        { toUserId: loggedInUser._id },
+      ],
     });
 
+    // Build a set of all user IDs involved in those requests (excluding self)
     const hideUserFromFeed = new Set();
     connectionRequests.forEach((request) => {
-      hideUserFromFeed.add(request.fromUserId.toString());
-      hideUserFromFeed.add(request.toUserId.toString());
+      const fromId = request.fromUserId.toString();
+      const toId = request.toUserId.toString();
+      if (fromId !== loggedInUser._id.toString()) hideUserFromFeed.add(fromId);
+      if (toId !== loggedInUser._id.toString()) hideUserFromFeed.add(toId);
     });
 
-    // Ensure all IDs in $nin and $ne are strings
+    // Exclude those users from the feed, and also exclude self
     const users = await UserModel.find({
-      $and: [
-        { _id: { $nin: Array.from(hideUserFromFeed).map(String) } },
-        { _id: { $ne: loggedInUser._id.toString() } },
-      ],
+      _id: {
+        $nin: [
+          ...Array.from(hideUserFromFeed),
+          loggedInUser._id.toString(),
+        ],
+      },
     })
       .select(USER_FIELDS)
       .skip(skip)
