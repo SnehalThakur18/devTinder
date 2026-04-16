@@ -1,8 +1,10 @@
-const express = reqire("express");
+const express = require("express");
 const paymentRouter = express.Router();
 const razorpayInstance = require("../utils/razorpay");
+const Payment = require("../models/payment");
+const { userAuth } = require("../middleware/auth");
 
-paymentRouter.post("/payment/create", async (req, res) => {
+paymentRouter.post("/payment/create", userAuth, async (req, res) => {
   console.log("Payment creation endpoint hit");
   try {
     const order = await razorpayInstance.orders.create({
@@ -15,7 +17,19 @@ paymentRouter.post("/payment/create", async (req, res) => {
         membershipType: "silver",
       },
     });
-    res.status(200).json(order);
+    const payment = new Payment({
+      userId: req.user._id,
+      orderId: order.id,
+      status: order.status,
+      amount: order.amount,
+      currency: order.currency,
+      receipt: order.receipt,
+      notes: order.notes,
+    });
+
+    const savedPayment = await payment.save();
+
+    res.status(200).json({ ...savedPayment.toJSON() });
   } catch (err) {
     return res.status(500).json({ msg: err.message });
   }
