@@ -77,21 +77,23 @@ userRouter.get("/user/feed", userAuth, async (req, res) => {
       ],
     });
 
+
     // Build a set of all user IDs involved in those requests (excluding self)
     const hideUserFromFeed = new Set();
+    const selfId = loggedInUser._id.toString();
     connectionRequests.forEach((request) => {
       const fromId = request.fromUserId.toString();
       const toId = request.toUserId.toString();
-      if (fromId !== loggedInUser._id.toString()) hideUserFromFeed.add(fromId);
-      if (toId !== loggedInUser._id.toString()) hideUserFromFeed.add(toId);
+      if (fromId !== selfId) hideUserFromFeed.add(fromId);
+      if (toId !== selfId) hideUserFromFeed.add(toId);
     });
 
-    // Exclude those users from the feed, and also exclude self
+    // Exclude those users from the feed, and also exclude self (all as strings)
     const users = await UserModel.find({
       _id: {
         $nin: [
           ...Array.from(hideUserFromFeed),
-          loggedInUser._id.toString(),
+          selfId,
         ],
       },
     })

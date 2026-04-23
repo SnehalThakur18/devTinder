@@ -70,6 +70,15 @@ const userSchema = new Schema(
     skills: {
       type: [String],
     },
+    isPremium: {
+      type: Boolean,
+      default: false,
+    },
+    membershipType: {
+      type: String,
+      enum: ["Silver", "Gold", null],
+      default: null,
+    },
   },
   {
     timestamps: true,
