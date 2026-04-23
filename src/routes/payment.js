@@ -4,6 +4,9 @@ const razorpayInstance = require("../utils/razorpay");
 const Payment = require("../models/payment");
 const { userAuth } = require("../middleware/auth");
 const { membershipAmount } = require("../utils/constants");
+const {
+  validateWebhookSignature,
+} = require("razorpay/dist/utils/razorpay-utils");
 
 paymentRouter.post("/payment/create", userAuth, async (req, res) => {
   console.log("Payment creation endpoint hit");
@@ -36,6 +39,18 @@ paymentRouter.post("/payment/create", userAuth, async (req, res) => {
     res
       .status(200)
       .json({ ...savedPayment.toJSON(), keyId: process.env.RAZORPAY_KEY_ID });
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
+});
+
+paymentRouter.post("/payment/webhook", async (req, res) => {
+  try {
+    validateWebhookSignature(
+      JSON.stringify(webhookBody),
+      webhookSignature,
+      process.env.RAZORPAY_WEBHOOK_SECRET,
+    );
   } catch (err) {
     return res.status(500).json({ msg: err.message });
   }
